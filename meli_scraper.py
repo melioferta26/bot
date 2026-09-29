@@ -1,9 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-import re
 
 def obtener_ofertas_destacadas():
-    # URL de la sección de Ofertas de Mercado Libre Argentina
     url = "https://www.mercadolibre.com.ar/ofertas"
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -11,26 +9,36 @@ def obtener_ofertas_destacadas():
     
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
+        print(f"Error al acceder a Mercado Libre: Status {response.status_code}")
         return []
 
     soup = BeautifulSoup(response.text, 'html.parser')
     ofertas = []
 
-    # Extraer items en oferta
+    # Intento 1: Clases habituales de items en oferta
     items = soup.find_all('div', class_='promotion-item__container')
     
-    for item in items[:5]: # Procesa los 5 primeros productos
-        try:
-            titulo = item.find('p', class_='promotion-item__title').text.strip()
-            precio_actual = item.find('span', class_='andes-money-amount__fraction').text.strip()
-            
-            link_original = item.find('a', class_='promotion-item__link-mask')['href']
-            
-            # Formateo del enlace con tu tag/id de afiliado de MELI
-            # Reemplazar 'TU_TAG_AFILIADO' por el identificador asignado en la Central de Afiliados
-            link_afiliado = f"{link_original}?matt_tool=12345678&matt_word=ofermeli"
+    # Intento 2: Si no encuentra con la clase anterior, busca en la grilla principal
+    if not items:
+        items = soup.select('.promotions-item, .promotion-item, li.promotion-item')
 
-            # Redacción del mensaje
+    for item in items[:5]:
+        try:
+            titulo_elem = item.find('p', class_='promotion-item__title') or item.find('h2') or item.find('p')
+            precio_elem = item.find('span', class_='andes-money-amount__fraction')
+            link_elem = item.find('a', href=True)
+
+            if not (titulo_elem and precio_elem and link_elem):
+                continue
+
+            titulo = titulo_elem.text.strip()
+            precio_actual = precio_elem.text.strip()
+            link_original = link_elem['href']
+            
+            # Reemplazar 'TU_TAG_AFILIADO' por tu identificador de afiliado
+            TAG_AFILIADO = "ofermeli" 
+            link_afiliado = f"{link_original}?matt_tool=12345678&matt_word={TAG_AFILIADO}"
+
             mensaje = (
                 f"🔥 **¡OFERTA DESTACADA EN MERCADO LIBRE!** 🔥\n\n"
                 f"📦 **Producto:** {titulo}\n"
@@ -46,6 +54,8 @@ def obtener_ofertas_destacadas():
                 'mensaje': mensaje
             })
         except Exception as e:
+            print(f"Error procesando un item: {e}")
             continue
             
+    print(f"Se encontraron {len(ofertas)} ofertas.")
     return ofertas
