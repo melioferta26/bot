@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Bot Ofertas ML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-yellow-400">🤖 Bot Dashboard</h1>
+                <p class="text-gray-400 text-sm">Administrador de ofertas y logs en tiempo real</p>
+            </div>
+            <button id="runBtn" onclick="runBot()" class="bg-yellow-500 hover:bg-yellow-400 text-gray-900 font-bold px-6 py-3 rounded-lg shadow-lg transition">
+                🚀 Ejecutar Bot Ahora
+            </button>
+        </div>
+
+        <div id="alertBox" class="hidden mb-6 p-4 rounded-lg bg-blue-900 text-blue-200"></div>
+
+        <!-- Muestras / Métricas -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                <span class="text-xs text-gray-400 uppercase tracking-wider">Ejecuciones Totales</span>
+                <p class="text-3xl font-extrabold text-white mt-1">{{ stats.total_runs }}</p>
+            </div>
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                <span class="text-xs text-gray-400 uppercase tracking-wider">Mensajes Enviados</span>
+                <p class="text-3xl font-extrabold text-green-400 mt-1">{{ stats.successful_sends }}</p>
+            </div>
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                <span class="text-xs text-gray-400 uppercase tracking-wider">Fallos / Errores</span>
+                <p class="text-3xl font-extrabold text-red-400 mt-1">{{ stats.failed_runs }}</p>
+            </div>
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700">
+                <span class="text-xs text-gray-400 uppercase tracking-wider">Última Ejecución</span>
+                <p class="text-sm font-semibold text-gray-300 mt-2">{{ stats.last_run or 'Nunca' }}</p>
+            </div>
+        </div>
+
+        <!-- Tabla de Logs -->
+        <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-lg font-semibold text-gray-200">Historial de Ejecuciones y Links</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-gray-300">
+                    <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
+                        <tr>
+                            <th class="p-3">Fecha/Hora</th>
+                            <th class="p-3">Estado</th>
+                            <th class="p-3">Detalle / Mensaje</th>
+                            <th class="p-3">Producto / Link</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        {% for log in logs %}
+                        <tr class="hover:bg-gray-750">
+                            <td class="p-3 whitespace-nowrap text-xs text-gray-400">{{ log.timestamp }}</td>
+                            <td class="p-3">
+                                {% if log.status == 'SUCCESS' %}
+                                    <span class="bg-green-900/60 text-green-300 text-xs px-2.5 py-1 rounded">Éxito</span>
+                                {% elif log.status == 'ERROR' %}
+                                    <span class="bg-red-900/60 text-red-300 text-xs px-2.5 py-1 rounded">Error</span>
+                                {% else %}
+                                    <span class="bg-yellow-900/60 text-yellow-300 text-xs px-2.5 py-1 rounded">Aviso</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3">{{ log.message }}</td>
+                            <td class="p-3">
+                                {% if log.affiliate_url %}
+                                    <a href="{{ log.affiliate_url }}" target="_blank" class="text-blue-400 hover:underline text-xs">
+                                        {{ log.product_name or 'Ver Link Afiliado' }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-gray-500 text-xs">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function runBot() {
+            const btn = document.getElementById('runBtn');
+            const alertBox = document.getElementById('alertBox');
+            btn.disabled = true;
+            btn.innerText = '⏳ Ejecutando...';
+
+            fetch('/run-now', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    alertBox.classList.remove('hidden');
+                    alertBox.innerText = data.message;
+                    setTimeout(() => window.location.reload(), 4000);
+                })
+                .catch(() => {
+                    alertBox.classList.remove('hidden');
+                    alertBox.innerText = 'Error al intentar iniciar el bot.';
+                    btn.disabled = false;
+                    btn.innerText = '🚀 Ejecutar Bot Ahora';
+                });
+        }
+    </script>
+</body>
+</html>
