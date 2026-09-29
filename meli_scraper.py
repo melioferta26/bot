@@ -28,7 +28,7 @@ def obtener_ofertas_destacadas():
             
             # Formateo del enlace con tu tag/id de afiliado de MELI
             # Reemplazar 'TU_TAG_AFILIADO' por el identificador asignado en la Central de Afiliados
-            link_afiliado = f"{link_original}?matt_tool=12345678&matt_word=TU_TAG_AFILIADO"
+            link_afiliado = f"{link_original}?matt_tool=12345678&matt_word=ofermeli"
 
             # Redacción del mensaje
             mensaje = (
